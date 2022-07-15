@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "honeycomb-grid": "alpha",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
