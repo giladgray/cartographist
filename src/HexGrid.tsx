@@ -22,19 +22,18 @@ export const HexGrid: React.FC = () => {
   const [grid, setGrid] = useState(newGrid);
 
   const hexes: Hex[] = [];
-  grid.each(hex => hexes.push(hex)).run();
+  grid.run(hex => hexes.push(hex));
 
   const neighbors = new Map<string, Hex>();
-  grid
-    .each(hex => {
-      for (const d of DIRECTIONS) {
-        const n = grid.getHex(neighborOf(hex, d));
-        if (!grid.store.has(n.toString())) {
-          neighbors.set(n.toString(), n);
-        }
+  grid.run(hex => {
+    for (const d of DIRECTIONS) {
+      const n = grid.getHex(neighborOf(hex, d));
+      if (!grid.store.has(n.toString())) {
+        neighbors.set(n.toString(), n);
       }
-    })
-    .run();
+    }
+  });
+
   const borders = Array.from(neighbors.values());
 
   const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
