@@ -1,5 +1,5 @@
 import { add, CompassDirection, createHexPrototype, Grid, Hex, neighborOf } from 'honeycomb-grid';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 enum TerrainType {
   PLAIN,
@@ -70,6 +70,23 @@ function createTiles(count = 10) {
 export const HexGrid: React.FC = () => {
   const [grid, setGrid] = useState(Hexy.create);
   const [stack, setStack] = useState(createTiles);
+  // total score
+  const [score, setScore] = useState(0);
+  // points earned from last move
+  const [points, setPoints] = useState(0);
+  // score from the previous target
+  const [lastScore, setLastScore] = useState(0);
+  // points needed to reach next target (lastScore + target)
+  const [target, setTarget] = useState(10);
+
+  // award more tiles for reaching the target and set a new larger target.
+  useEffect(() => {
+    if (score - lastScore >= target) {
+      setStack(s => s.concat(createTiles(5)));
+      setLastScore(lastScore + target);
+      setTarget(Math.floor(target * 1.2));
+    }
+  }, [score, lastScore, target]);
 
   // get all hexes from grid.store
   const hexes: MyHex[] = [];
@@ -93,10 +110,20 @@ export const HexGrid: React.FC = () => {
       pt.type = head;
       setStack(rest);
       setGrid(grid.update(g => Hexy.set(g, pt)));
+
+      // award points for adding a tile
+      const neighbors = Hexy.neighborsOf(grid, pt).filter(n => Hexy.get(grid, n)?.type === pt.type);
+      const points = 1 + neighbors.length ** 2;
+      setPoints(points);
+      setScore(s => s + points);
     }
   };
 
   const newGame = () => {
+    setPoints(0);
+    setScore(0);
+    setLastScore(0);
+    setTarget(10);
     setGrid(Hexy.create());
     setStack(createTiles());
   };
@@ -123,20 +150,45 @@ export const HexGrid: React.FC = () => {
         ))}
         {stack.length > 0 &&
           Array.from(neighbors.values()).map((hex, i) => (
-            <polygon key={`empty-${i}`} points={Hexy.points(hex)} className="open" stroke="lightblue" fill="snow" />
+            <polygon
+              key={`empty-${i}`}
+              points={Hexy.points(hex)}
+              className="open"
+              fill="lightsteelblue"
+              fillOpacity={0.2}
+            />
           ))}
+
+        <g className="score">
+          <text x={width / 2} y={height - SIZE} fontSize="2em" textAnchor="middle">
+            {score}
+          </text>
+          {points > 0 && (
+            <text x={width / 2} y={height - 10} textAnchor="middle">
+              +{points}
+            </text>
+          )}
+          <text x={width - 10} y={height - 10} fillOpacity={0.5} textAnchor="end">
+            {lastScore + target}
+          </text>
+          <rect x={0} y={height - 5} width={width * ((score - lastScore) / target)} height={5} fill="maroon" />
+        </g>
       </svg>
-      <svg width={SIZE * 2} height={height}>
+      <svg className="storage" width={SIZE * 2} height={height}>
         {stack
           .map((t, i) => (
-            <g key={`stack-${i}`} transform={`translate(${SIZE}, ${height - SIZE / 3 - (stack.length - i) * 10})`}>
+            <g key={`stack-${i}`} transform={`translate(${SIZE}, ${height - 5 - (stack.length - i) * 10})`}>
               <polygon points={Hexy.points(stackTile)} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t]} />
             </g>
           ))
+          // so the first one is one top
           .reverse()}
+
         <g transform={`translate(${SIZE}, ${height - SIZE / 3})`}>
           <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
-          <text textAnchor="middle">{stack.length}</text>
+          <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">
+            {stack.length || 'END'}
+          </text>
         </g>
       </svg>
     </div>
@@ -156,6 +208,7 @@ ROADMAP
   - tundra?
   - swamp?
 x stack of incoming tiles
+x basic scoring
 - draw percentage of terrain types
 - each tile edge has terrain type
 - rotate incoming tiles

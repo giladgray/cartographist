@@ -50,6 +50,15 @@ header button {
   border: 2px dashed brown;
 }
 
+.cartograph text {
+  fill: currentColor;
+}
+
 .cartograph .open:hover {
-  fill-opacity: 0.2;
+  fill: inherit;
+  fill-opacity: 0.33;
+}
+
+.storage {
+  border-bottom: 2px solid brown;
 }
