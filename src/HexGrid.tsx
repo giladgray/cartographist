@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
-import { createHexPrototype, Grid, Hex, spiral } from "honeycomb-grid";
+import { createHexPrototype, Grid, Hex, spiral } from 'honeycomb-grid';
+import { useMemo, useState } from 'react';
 
-const hex = createHexPrototype({ dimensions: 50})
+const hex = createHexPrototype({ dimensions: 50 });
 
-const grid = new Grid(hex, spiral({ start: [2,6], radius: 4, }))
+const grid = new Grid(hex, spiral({ start: [2, 6], radius: 4 }));
 
 interface Cell {
   points: string;
@@ -11,28 +11,33 @@ interface Cell {
 }
 
 export const HexGrid: React.FC = () => {
-  const [state, setState] = useState<Hex[]>([])
+  const [state, setState] = useState<Hex[]>(() => [grid.getHex({ q: 0, r: 0 })]);
   const hexes = useMemo(() => {
-    const array: Cell[] = []
-    grid.each(hex => {
-      array.push({hex, points: hex.corners.map(c => `${c.x} ${c.y}`).join(',')})
-    }).run()
+    const array: Cell[] = [];
+    grid.each(hex => array.push({ hex, points: hex.corners.map(c => `${c.x} ${c.y}`).join(',') })).run();
     return array;
-  }, [])
+  }, []);
 
-  const handleClick: React.MouseEventHandler = ({nativeEvent: {offsetX, offsetY}}) => {
-    const pt = grid.pointToHex({ x: offsetX, y: offsetY })
-    setState(s => s.concat(pt))
-  }
+  const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
+    const pt = grid.pointToHex({ x: offsetX, y: offsetY });
+    setState(s => s.concat(pt));
+  };
 
   return (
     <div className="App">
       <svg width={1000} height={1000} onClick={handleClick}>
-        {hexes.map((h,i) => <polygon key={i} points={h.points} stroke='lightgray' fill={state.find(s => h.hex.equals(s)) ? 'green':'transparent'} />)}
+        {hexes.map((h, i) => (
+          <polygon
+            key={i}
+            points={h.points}
+            stroke="lightgray"
+            fill={state.find(s => h.hex.equals(s)) ? 'green' : 'transparent'}
+          />
+        ))}
       </svg>
     </div>
   );
-}
+};
 
 /*
 ROADMAP

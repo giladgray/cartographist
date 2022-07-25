@@ -1,16 +1,11 @@
-import { useState } from 'react'
-import logo from './logo.svg'
-import './App.css'
-import { HexGrid } from './HexGrid'
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+import { HexGrid } from './HexGrid';
 
+export default function App() {
   return (
     <div className="App">
       <HexGrid />
     </div>
-  )
+  );
 }
-
-export default App
