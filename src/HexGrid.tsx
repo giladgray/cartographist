@@ -1,7 +1,11 @@
 import { add, CompassDirection, createHexPrototype, Grid, Hex, neighborOf } from 'honeycomb-grid';
 import React, { useMemo, useState } from 'react';
 
-const HEX = createHexPrototype({ dimensions: 30 });
+interface MyHex extends Hex {
+  type: TerrainType;
+}
+
+const HEX = createHexPrototype<MyHex>({ dimensions: 30, type: TerrainType.PLAIN });
 
 const DIRECTIONS = [
   // CompassDirection.N,
@@ -14,36 +18,52 @@ const DIRECTIONS = [
   CompassDirection.NW,
 ];
 
-function newGrid() {
-  return new Grid(HEX, add([3, 5], [2, 5], [3, 4]));
-}
+const Hexy = {
+  /** Create new hex grid with some starter tiles. */
+  create() {
+    return new Grid(HEX, add([3, 5], [2, 5], [3, 4]));
+  },
+  /** Get array of all neighbors of this hex. */
+  neighborsOf(grid: Grid<MyHex>, hex: Hex) {
+    return DIRECTIONS.map(d => grid.getHex(neighborOf(hex, d)));
+  },
+  /** Test if `grid.store` contains this hex. */
+  has(grid: Grid<MyHex>, hex: Hex) {
+    return grid.store.has(hex.toString());
+  },
+  /** Get SVG `<polygon points={..}>` string for this hex. */
+  points(hex: Hex): string {
+    return hex.corners.map(c => `${c.x} ${c.y}`).join(',');
+  },
+};
 
 export const HexGrid: React.FC = () => {
-  const [grid, setGrid] = useState(newGrid);
+  const [grid, setGrid] = useState(Hexy.create);
 
-  const hexes: Hex[] = [];
+  // get all hexes from grid.store
+  const hexes: MyHex[] = [];
   grid.run(hex => hexes.push(hex));
 
-  const neighbors = new Map<string, Hex>();
+  // get all neighbors of hexes
+  const neighbors = new Map<string, MyHex>();
   grid.run(hex => {
-    for (const d of DIRECTIONS) {
-      const n = grid.getHex(neighborOf(hex, d));
-      if (!grid.store.has(n.toString())) {
+    for (const n of Hexy.neighborsOf(grid, hex)) {
+      if (!Hexy.has(grid, n)) {
         neighbors.set(n.toString(), n);
       }
     }
   });
 
-  const borders = Array.from(neighbors.values());
-
   const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
-    if (!DIRECTIONS.some(d => grid.store.has(grid.getHex(neighborOf(pt, d)).toString()))) return;
-    setGrid(
-      grid.update(g => {
-        g.store.set(pt.toString(), pt);
-      })
-    );
+    // can place in empty tile next to a placed tile
+    if (!Hexy.has(grid, pt) && neighbors.has(pt.toString())) {
+      setGrid(
+        grid.update(g => {
+          g.store.set(pt.toString(), pt);
+        })
+      );
+    }
   };
 
   const width = 500;
@@ -52,26 +72,22 @@ export const HexGrid: React.FC = () => {
   return (
     <div className="App">
       <header>
-        <button onClick={() => setGrid(newGrid())}>New game</button>
+        <button onClick={() => setGrid(Hexy.create())}>New game</button>
       </header>
 
       <svg width={width} height={height} onClick={handleClick}>
-        <rect width="100%" height="100%" fill="lightblue" />
+        <rect width="100%" height="100%" fill="lightblue" fillOpacity={0.3} />
 
         {hexes.map((hex, i) => (
-          <polygon key={`tile-${i}`} points={hexPoints(hex)} fill="green" />
+          <polygon key={`tile-${i}`} points={Hexy.points(hex)} fill={TERRAIN_COLORS[hex.type]} />
         ))}
-        {borders.map((hex, i) => (
-          <polygon key={`empty-${i}`} points={hexPoints(hex)} className="open" fill="cornflowerblue" />
+        {Array.from(neighbors.values()).map((hex, i) => (
+          <polygon key={`empty-${i}`} points={Hexy.points(hex)} className="open" fill="lightblue" fillOpacity={0.3} />
         ))}
       </svg>
     </div>
   );
 };
-
-function hexPoints(hex: Hex): string {
-  return hex.corners.map(c => `${c.x} ${c.y}`).join(',');
-}
 
 /*
 ROADMAP
