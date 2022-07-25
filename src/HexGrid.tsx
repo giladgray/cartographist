@@ -58,7 +58,7 @@ export const HexGrid: React.FC = () => {
   const hexes: MyHex[] = [];
   grid.run(hex => hexes.push(hex));
 
-  // get all neighbors of hexes
+  // get all unique neighbors of hexes
   const neighbors = new Map<string, MyHex>();
   grid.run(hex => {
     for (const n of Hexy.neighborsOf(grid, hex)) {
@@ -90,14 +90,14 @@ export const HexGrid: React.FC = () => {
         <button onClick={() => setGrid(Hexy.create())}>New game</button>
       </header>
 
-      <svg width={width} height={height} onClick={handleClick}>
+      <svg className="cartograph" width={width} height={height} onClick={handleClick}>
         <rect width="100%" height="100%" fill="lightblue" fillOpacity={0.3} />
 
         {hexes.map((hex, i) => (
           <polygon key={`tile-${i}`} points={Hexy.points(hex)} fill={TERRAIN_COLORS[hex.type]} />
         ))}
         {Array.from(neighbors.values()).map((hex, i) => (
-          <polygon key={`empty-${i}`} points={Hexy.points(hex)} className="open" fill="lightblue" fillOpacity={0.3} />
+          <polygon key={`empty-${i}`} points={Hexy.points(hex)} className="open" stroke="lightblue" fillOpacity={0} />
         ))}
       </svg>
     </div>

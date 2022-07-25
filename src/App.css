@@ -40,3 +40,12 @@
 button {
   font-size: calc(10px + 2vmin);
 }
+
+header {
+  margin-bottom: 1em;
+}
+
+
+.cartograph .open:hover {
+  fill-opacity: 0.08;
+}
