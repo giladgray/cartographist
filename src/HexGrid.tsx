@@ -1,6 +1,20 @@
 import { add, CompassDirection, createHexPrototype, Grid, Hex, neighborOf } from 'honeycomb-grid';
 import React, { useMemo, useState } from 'react';
 
+enum TerrainType {
+  PLAIN,
+  FOREST,
+  MOUNTAIN,
+  WATER,
+}
+
+const TERRAIN_COLORS: Record<TerrainType, string> = {
+  [TerrainType.PLAIN]: 'wheat',
+  [TerrainType.FOREST]: 'darkgreen',
+  [TerrainType.MOUNTAIN]: 'darkgray',
+  [TerrainType.WATER]: 'cornflowerblue',
+};
+
 interface MyHex extends Hex {
   type: TerrainType;
 }
@@ -58,6 +72,7 @@ export const HexGrid: React.FC = () => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
     // can place in empty tile next to a placed tile
     if (!Hexy.has(grid, pt) && neighbors.has(pt.toString())) {
+      pt.type = Math.floor(Math.random() * 4);
       setGrid(
         grid.update(g => {
           g.store.set(pt.toString(), pt);
@@ -94,16 +109,16 @@ ROADMAP
 - rules about placing
   x must have 1+ neighbor
 - several terrain types
-  - plain
-  - forest
-  - mountain
-  - water
+  x plain
+  x forest
+  x mountain
+  x water
   - desert?
   - tundra?
   - swamp?
+- stack of incoming tiles
 - draw percentage of terrain types
 - each tile edge has terrain type
-- stack of incoming tiles
 - rotate incoming tiles
 - scoring
   - detect contiguous regions
