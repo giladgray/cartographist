@@ -1,48 +1,83 @@
-import { createHexPrototype, Grid, Hex, spiral } from 'honeycomb-grid';
-import { useMemo, useState } from 'react';
+import { add, CompassDirection, createHexPrototype, Grid, Hex, neighborOf } from 'honeycomb-grid';
+import React, { useMemo, useState } from 'react';
 
-const hex = createHexPrototype({ dimensions: 50 });
+const HEX = createHexPrototype({ dimensions: 30 });
 
-const grid = new Grid(hex, spiral({ start: [2, 6], radius: 4 }));
+const DIRECTIONS = [
+  // CompassDirection.N,
+  CompassDirection.NE,
+  CompassDirection.E,
+  CompassDirection.SE,
+  // CompassDirection.S,
+  CompassDirection.SW,
+  CompassDirection.W,
+  CompassDirection.NW,
+];
 
-interface Cell {
-  points: string;
-  hex: Hex;
+function newGrid() {
+  return new Grid(HEX, add([3, 5], [2, 5], [3, 4]));
 }
 
 export const HexGrid: React.FC = () => {
-  const [state, setState] = useState<Hex[]>(() => [grid.getHex({ q: 0, r: 0 })]);
-  const hexes = useMemo(() => {
-    const array: Cell[] = [];
-    grid.each(hex => array.push({ hex, points: hex.corners.map(c => `${c.x} ${c.y}`).join(',') })).run();
-    return array;
-  }, []);
+  const [grid, setGrid] = useState(newGrid);
+
+  const hexes: Hex[] = [];
+  grid.each(hex => hexes.push(hex)).run();
+
+  const neighbors = new Map<string, Hex>();
+  grid
+    .each(hex => {
+      for (const d of DIRECTIONS) {
+        const n = grid.getHex(neighborOf(hex, d));
+        if (!grid.store.has(n.toString())) {
+          neighbors.set(n.toString(), n);
+        }
+      }
+    })
+    .run();
+  const borders = Array.from(neighbors.values());
 
   const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
-    setState(s => s.concat(pt));
+    if (!DIRECTIONS.some(d => grid.store.has(grid.getHex(neighborOf(pt, d)).toString()))) return;
+    setGrid(
+      grid.update(g => {
+        g.store.set(pt.toString(), pt);
+      })
+    );
   };
+
+  const width = 500;
+  const height = 500;
 
   return (
     <div className="App">
-      <svg width={1000} height={1000} onClick={handleClick}>
-        {hexes.map((h, i) => (
-          <polygon
-            key={i}
-            points={h.points}
-            stroke="lightgray"
-            fill={state.find(s => h.hex.equals(s)) ? 'green' : 'transparent'}
-          />
+      <header>
+        <button onClick={() => setGrid(newGrid())}>New game</button>
+      </header>
+
+      <svg width={width} height={height} onClick={handleClick}>
+        <rect width="100%" height="100%" fill="lightblue" />
+
+        {hexes.map((hex, i) => (
+          <polygon key={`tile-${i}`} points={hexPoints(hex)} fill="green" />
+        ))}
+        {borders.map((hex, i) => (
+          <polygon key={`empty-${i}`} points={hexPoints(hex)} className="open" fill="cornflowerblue" />
         ))}
       </svg>
     </div>
   );
 };
 
+function hexPoints(hex: Hex): string {
+  return hex.corners.map(c => `${c.x} ${c.y}`).join(',');
+}
+
 /*
 ROADMAP
 - rules about placing
-  - must have 1+ neighbor
+  x must have 1+ neighbor
 - several terrain types
   - plain
   - forest
