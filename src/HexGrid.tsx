@@ -11,7 +11,7 @@ enum TerrainType {
 const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.PLAIN]: 'wheat',
   [TerrainType.FOREST]: 'darkgreen',
-  [TerrainType.MOUNTAIN]: 'darkgray',
+  [TerrainType.MOUNTAIN]: 'dimgray',
   [TerrainType.WATER]: 'cornflowerblue',
 };
 
@@ -35,8 +35,8 @@ const DIRECTIONS = [
 
 const Hexy = {
   /** Create new hex grid with some starter tiles. */
-  create() {
-    return new Grid(HEX, add([3, 5], [2, 5], [3, 4]));
+  create(x = 5, y = 6) {
+    return new Grid(HEX, add([x, y], [x - 1, y], [x, y - 1]));
   },
   /** Get array of all neighbors of this hex. */
   neighborsOf(grid: Grid<MyHex>, hex: Hex) {
@@ -92,17 +92,27 @@ export const HexGrid: React.FC = () => {
     }
   };
 
-  const width = 500;
-  const height = 500;
+  const newGame = () => {
+    setGrid(Hexy.create());
+    setStack(createTiles());
+  };
 
+  const width = 800;
+  const height = 600;
+  const stackTile = grid.getHex({ col: 0, row: 0 });
   return (
     <div className="App">
       <header>
-        <button onClick={() => setGrid(Hexy.create())}>New game</button>
+        <h1>Cartographer's Guild</h1>
+        <button onClick={newGame}>New game</button>
+        <button disabled={stack.length > 40} onClick={() => setStack(s => s.concat(createTiles(5)))}>
+          Add 5
+        </button>
       </header>
 
-      <svg className="cartograph" width={width} height={height} onClick={handleClick}>
-        <rect width="100%" height="100%" fill="lightblue" fillOpacity={0.3} />
+      {/* default fill for hover state on perimeter */}
+      <svg className="cartograph" width={width} height={height} onClick={handleClick} fill={TERRAIN_COLORS[stack[0]]}>
+        <rect width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
         {hexes.map((hex, i) => (
           <polygon key={`tile-${i}`} points={Hexy.points(hex)} fill={TERRAIN_COLORS[hex.type]} />
@@ -116,7 +126,7 @@ export const HexGrid: React.FC = () => {
         {stack
           .map((t, i) => (
             <g key={`stack-${i}`} transform={`translate(${SIZE}, ${height - SIZE / 3 - (stack.length - i) * 10})`}>
-              <polygon points={Hexy.points(stackTile)} stroke="white" strokeWidth={3} fill={TERRAIN_COLORS[t]} />
+              <polygon points={Hexy.points(stackTile)} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t]} />
             </g>
           ))
           .reverse()}

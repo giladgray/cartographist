@@ -37,15 +37,19 @@
   }
 }
 
-button {
-  font-size: calc(10px + 2vmin);
-}
 
 header {
   margin-bottom: 1em;
 }
 
+header button {
+  font-size: 1.4em;
+}
+
+.cartograph {
+  border: 2px dashed brown;
+}
 
 .cartograph .open:hover {
-  fill-opacity: 0.08;
+  fill-opacity: 0.2;
 }
