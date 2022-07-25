@@ -42,9 +42,17 @@ const Hexy = {
   neighborsOf(grid: Grid<MyHex>, hex: Hex) {
     return DIRECTIONS.map(d => grid.getHex(neighborOf(hex, d)));
   },
-  /** Test if `grid.store` contains this hex. */
-  has(grid: Grid<MyHex>, hex: Hex) {
-    return grid.store.has(hex.toString());
+  /** Test if `grid.store` or map contains this hex. */
+  has(grid: Grid<MyHex> | Map<string, MyHex>, hex: Hex) {
+    return ('store' in grid ? grid.store : grid).has(hex.toString());
+  },
+  /** Get hex in `grid.store` or map. */
+  get(grid: Grid<MyHex> | Map<string, MyHex>, hex: MyHex) {
+    return ('store' in grid ? grid.store : grid).get(hex.toString());
+  },
+  /** Set hex in `grid.store` or map. */
+  set(grid: Grid<MyHex> | Map<string, MyHex>, hex: MyHex) {
+    ('store' in grid ? grid.store : grid).set(hex.toString(), hex);
   },
   /** Get SVG `<polygon points={..}>` string for this hex. */
   points(hex: Hex): string {
@@ -72,7 +80,7 @@ export const HexGrid: React.FC = () => {
   grid.run(hex => {
     for (const n of Hexy.neighborsOf(grid, hex)) {
       if (!Hexy.has(grid, n)) {
-        neighbors.set(n.toString(), n);
+        Hexy.set(neighbors, n);
       }
     }
   });
@@ -80,15 +88,11 @@ export const HexGrid: React.FC = () => {
   const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
     // can place in empty tile next to a placed tile
-    if (stack.length > 0 && !Hexy.has(grid, pt) && neighbors.has(pt.toString())) {
+    if (stack.length > 0 && !Hexy.has(grid, pt) && Hexy.has(neighbors, pt)) {
       const [head, ...rest] = stack;
       pt.type = head;
       setStack(rest);
-      setGrid(
-        grid.update(g => {
-          g.store.set(pt.toString(), pt);
-        })
-      );
+      setGrid(grid.update(g => Hexy.set(g, pt)));
     }
   };
 
