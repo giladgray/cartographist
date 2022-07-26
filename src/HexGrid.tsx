@@ -17,6 +17,7 @@ const TERRAIN_COLORS: Record<TerrainType, string> = {
 };
 
 interface MyHex extends Hex {
+  id: number;
   type: TerrainType;
 }
 
@@ -65,11 +66,13 @@ const Hexy = {
   },
 };
 
+let nextId = 0;
+
 /** Create a number of new tiles. */
-function createTiles(count = 10) {
+function createTiles(count = 10): Omit<MyHex, keyof Hex>[] {
   return Array(count)
     .fill(TerrainType.PLAIN, 0)
-    .map(() => Math.floor(Math.random() * 4) as TerrainType);
+    .map(() => ({ id: nextId++, type: Math.floor(Math.random() * 4) as TerrainType }));
 }
 
 export const HexGrid: React.FC = () => {
@@ -111,8 +114,9 @@ export const HexGrid: React.FC = () => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
     // can place in empty tile next to a placed tile
     if (stack.length > 0 && !Hexy.has(grid, pt) && Hexy.has(neighbors, pt)) {
-      const [head, ...rest] = stack;
-      pt.type = head;
+      const [{ id, type }, ...rest] = stack;
+      pt.id = id;
+      pt.type = type;
       setStack(rest);
       setGrid(grid.update(g => Hexy.set(g, pt)));
 
@@ -147,7 +151,7 @@ export const HexGrid: React.FC = () => {
       </header>
 
       {/* default fill for hover state on perimeter */}
-      <svg className="cartograph" width={width} height={height} onClick={handleClick} fill={TERRAIN_COLORS[stack[0]]}>
+      <svg className="cartograph" width={width} height={height} onClick={handleClick}>
         <rect width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
         <AnimatePresence>
@@ -170,7 +174,7 @@ export const HexGrid: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 0.2, scale: 1 }}
                 transition={{ delay: 0.1 }}
-                whileHover={{ fill: TERRAIN_COLORS[stack[0]], scale: 1, opacity: 0.33 }}
+                whileHover={{ fill: TERRAIN_COLORS[stack[0].type], scale: 1, opacity: 0.33 }}
               />
             ))}
         </AnimatePresence>
@@ -221,14 +225,29 @@ export const HexGrid: React.FC = () => {
         </g>
       </svg>
       <svg className="storage" width={SIZE * 2} height={height}>
-        {stack
-          .map((t, i) => (
-            <g key={`stack-${i}`} transform={`translate(${SIZE}, ${height - 5 - (stack.length - i) * 10})`}>
-              <polygon points={Hexy.points(stackTile)} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t]} />
-            </g>
-          ))
-          // so the first one is one top
-          .reverse()}
+        <AnimatePresence>
+          {stack
+            .map((t, i) => (
+              <motion.g
+                key={`stack-${t.id}`}
+                initial={{
+                  opacity: 0.3,
+                  translateX: SIZE * 3,
+                  translateY: height - 5 - (stack.length - i) * 10,
+                }}
+                animate={{
+                  opacity: 1,
+                  translateX: SIZE,
+                  translateY: height - 5 - (stack.length - i) * 10,
+                }}
+                exit={{ opacity: 0, scale: 1.5, translateX: 0 }}
+              >
+                <polygon points={Hexy.points(stackTile)} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t.type]} />
+              </motion.g>
+            ))
+            // so the first one is one top
+            .reverse()}
+        </AnimatePresence>
 
         {/* stack count */}
         <g transform={`translate(${SIZE}, ${height - SIZE / 3})`}>
