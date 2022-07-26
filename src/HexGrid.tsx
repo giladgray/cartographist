@@ -10,10 +10,10 @@ enum TerrainType {
 }
 
 const TERRAIN_COLORS: Record<TerrainType, string> = {
-  [TerrainType.PLAIN]: 'wheat',
-  [TerrainType.FOREST]: 'darkgreen',
+  [TerrainType.PLAIN]: '#E1C16E',
+  [TerrainType.FOREST]: 'forestgreen',
   [TerrainType.MOUNTAIN]: 'dimgray',
-  [TerrainType.WATER]: 'cornflowerblue',
+  [TerrainType.WATER]: '#0096FF',
 };
 
 interface MyHex extends Hex {
@@ -62,7 +62,7 @@ const Hexy = {
   },
   /** Get SVG `<polygon points={..}>` string for this hex. */
   points(hex: Hex): string {
-    return hex.corners.map(c => `${c.x} ${c.y}`).join(',');
+    return hex.corners.map(c => `${Math.round(c.x)} ${Math.round(c.y)}`).join(',');
   },
 };
 
