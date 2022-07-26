@@ -1,71 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { add, CompassDirection, createHexPrototype, Grid, Hex, neighborOf } from 'honeycomb-grid';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-enum TerrainType {
-  PLAIN,
-  FOREST,
-  MOUNTAIN,
-  WATER,
-}
+import { Hexy, MyGrid, MyHex, TerrainType, Tile } from './Hexy';
 
 const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.PLAIN]: '#E1C16E',
   [TerrainType.FOREST]: '#228B22', // forestgreen
   [TerrainType.MOUNTAIN]: '#696969', // dimgray
   [TerrainType.WATER]: '#0096FF',
-};
-
-interface Tile {
-  id: number;
-  type: TerrainType;
-}
-
-interface MyHex extends Hex, Tile {}
-
-const SIZE = 30;
-const HEX = createHexPrototype<MyHex>({ dimensions: SIZE, type: TerrainType.PLAIN });
-
-const DIRECTIONS = [
-  // CompassDirection.N,
-  CompassDirection.NE,
-  CompassDirection.E,
-  CompassDirection.SE,
-  // CompassDirection.S,
-  CompassDirection.SW,
-  CompassDirection.W,
-  CompassDirection.NW,
-];
-
-const Hexy = {
-  /** Create new hex grid with some starter tiles. */
-  create(x = 5, y = 6) {
-    return new Grid(HEX, add([x, y], [x - 1, y], [x, y - 1]));
-  },
-  /** Get array of all neighbors of this hex. */
-  neighborsOf(grid: Grid<MyHex>, hex: Hex) {
-    return DIRECTIONS.map(d => grid.getHex(neighborOf(hex, d)));
-  },
-  /** Test if `grid.store` or map contains this hex. */
-  has(grid: Grid<MyHex> | Map<string, MyHex>, hex: Hex) {
-    return ('store' in grid ? grid.store : grid).has(hex.toString());
-  },
-  /** Get hex in `grid.store` or map. */
-  get(grid: Grid<MyHex> | Map<string, MyHex>, hex: MyHex) {
-    return ('store' in grid ? grid.store : grid).get(hex.toString());
-  },
-  /** Set hex in `grid.store` or map. */
-  set(grid: Grid<MyHex> | Map<string, MyHex>, hex: MyHex) {
-    ('store' in grid ? grid.store : grid).set(hex.toString(), hex);
-  },
-  /** Get an id string for this hex with optional suffix. */
-  id(hex: MyHex, suffix = '') {
-    return [hex.q, hex.r, suffix].join('-');
-  },
-  /** Get SVG `<polygon points={..}>` string for this hex. */
-  points(hex: Hex): string {
-    return hex.corners.map(c => `${Math.round(c.x)} ${Math.round(c.y)}`).join(',');
-  },
 };
 
 let nextId = 0;
@@ -153,7 +95,7 @@ export const HexGrid: React.FC = () => {
 };
 
 interface BoardProps {
-  grid: Grid<MyHex>;
+  grid: MyGrid;
   next?: Tile;
   points?: number;
 }
@@ -269,7 +211,7 @@ interface StackProps {
 const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => {
   const stackPoints = Hexy.points(hex);
   return (
-    <svg className="storage" width={SIZE * 2} height={height}>
+    <svg className="storage" width={Hexy.size * 2} height={height}>
       <AnimatePresence>
         {stack
           .map((t, i) => {
@@ -277,8 +219,8 @@ const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => {
             return (
               <motion.g
                 key={`stack-${t.id}`}
-                initial={{ opacity: 0.3, translateX: SIZE * 3, translateY }}
-                animate={{ opacity: 1, translateX: SIZE, translateY }}
+                initial={{ opacity: 0.3, translateX: Hexy.size * 3, translateY }}
+                animate={{ opacity: 1, translateX: Hexy.size, translateY }}
                 exit={{ opacity: 0, scale: 1.5, translateX: 0 }}
               >
                 <polygon points={stackPoints} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t.type]} />
@@ -290,7 +232,7 @@ const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => {
       </AnimatePresence>
 
       {/* stack count */}
-      <g transform={`translate(${SIZE}, ${height - SIZE / 3})`}>
+      <g transform={`translate(${Hexy.size}, ${height - Hexy.size / 3})`}>
         <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
         <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">
           {stack.length || 'END'}
