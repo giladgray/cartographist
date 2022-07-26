@@ -139,6 +139,7 @@ export const HexGrid: React.FC = () => {
 
   const width = 800;
   const height = 600;
+  const lastAdded = hexes[hexes.length - 1];
   const stackPoints = Hexy.points(grid.getHex({ col: 0, row: 0 }));
   return (
     <div className="App">
@@ -187,15 +188,18 @@ export const HexGrid: React.FC = () => {
             <text key="score" x={width / 2} y={height - 15} fontSize="2em" textAnchor="middle">
               {score}
             </text>
-            {/* points earned from last move */}
+            {/* points earned from last move; appears on last added tile */}
             {points > 0 && (
               <motion.text
                 key={score}
-                x={width / 2}
+                x={lastAdded.x}
+                y={lastAdded.y}
                 textAnchor="middle"
-                initial={{ y: height }}
-                animate={{ y: height - 10 }}
-                exit={{ y: height - 20, opacity: 0 }}
+                dominantBaseline="middle"
+                style={{ filter: 'drop-shadow(0 0 4px snow)' }}
+                initial={{ translateY: 10, opacity: 0 }}
+                animate={{ translateY: 0, opacity: 1 }}
+                exit={{ translateY: -10, opacity: 0 }}
               >
                 +{points}
               </motion.text>
