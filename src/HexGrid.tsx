@@ -11,8 +11,8 @@ enum TerrainType {
 
 const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.PLAIN]: '#E1C16E',
-  [TerrainType.FOREST]: 'forestgreen',
-  [TerrainType.MOUNTAIN]: 'dimgray',
+  [TerrainType.FOREST]: '#228B22', // forestgreen
+  [TerrainType.MOUNTAIN]: '#696969', // dimgray
   [TerrainType.WATER]: '#0096FF',
 };
 
@@ -192,7 +192,7 @@ const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
             key={Hexy.id(hex, 'empty')}
             points={Hexy.points(hex)}
             className="open"
-            fill="lightsteelblue"
+            fill="#B0C4DE" // lightsteelblue
             initial={{ opacity: 0, scale: 0.6 }}
             animate={{ opacity: 0.2, scale: 1 }}
             exit={{ opacity: 0, scale: 0.6 }}
