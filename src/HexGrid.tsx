@@ -139,7 +139,7 @@ export const HexGrid: React.FC = () => {
 
   const width = 800;
   const height = 600;
-  const stackTile = grid.getHex({ col: 0, row: 0 });
+  const stackPoints = Hexy.points(grid.getHex({ col: 0, row: 0 }));
   return (
     <div className="App">
       <header>
@@ -162,6 +162,7 @@ export const HexGrid: React.FC = () => {
               fill={TERRAIN_COLORS[hex.type]}
               initial={{ opacity: 0, scale: 0.3 }}
               animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.3 }}
             />
           ))}
           {stack.length > 0 &&
@@ -173,6 +174,7 @@ export const HexGrid: React.FC = () => {
                 fill="lightsteelblue"
                 initial={{ opacity: 0, scale: 0.6 }}
                 animate={{ opacity: 0.2, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.6 }}
                 transition={{ delay: 0.1 }}
                 whileHover={{ fill: TERRAIN_COLORS[stack[0].type], scale: 1, opacity: 0.33 }}
               />
@@ -182,7 +184,7 @@ export const HexGrid: React.FC = () => {
         <g className="scorebox">
           <AnimatePresence>
             {/* total score */}
-            <text key="score" x={width / 2} y={height - SIZE} fontSize="2em" textAnchor="middle">
+            <text key="score" x={width / 2} y={height - 15} fontSize="2em" textAnchor="middle">
               {score}
             </text>
             {/* points earned from last move */}
@@ -205,8 +207,8 @@ export const HexGrid: React.FC = () => {
               fillOpacity={0.5}
               textAnchor="end"
               initial={{ y: height }}
-              animate={{ y: height - 10 }}
-              exit={{ y: height - 20, opacity: 0 }}
+              animate={{ y: height - 15 }}
+              exit={{ y: height - 30, opacity: 0 }}
             >
               {lastScore + target}
             </motion.text>
@@ -214,11 +216,11 @@ export const HexGrid: React.FC = () => {
             <motion.rect
               key={`progress-${target}`}
               x={0}
-              y={height - 6}
+              y={height - 5}
               initial={{ width: 0 }}
               animate={{ width: width * Math.min(1, (score - lastScore) / target), opacity: 1 }}
               exit={{ width, scaleY: 4, opacity: 0, transformOrigin: 'bottom' }}
-              height={6}
+              height={5}
               fill="maroon"
             />
           </AnimatePresence>
@@ -242,7 +244,7 @@ export const HexGrid: React.FC = () => {
                 }}
                 exit={{ opacity: 0, scale: 1.5, translateX: 0 }}
               >
-                <polygon points={Hexy.points(stackTile)} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t.type]} />
+                <polygon points={stackPoints} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t.type]} />
               </motion.g>
             ))
             // so the first one is one top
