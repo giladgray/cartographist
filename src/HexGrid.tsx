@@ -1,3 +1,4 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { add, CompassDirection, createHexPrototype, Grid, Hex, neighborOf } from 'honeycomb-grid';
 import React, { useEffect, useMemo, useState } from 'react';
 
@@ -53,6 +54,10 @@ const Hexy = {
   /** Set hex in `grid.store` or map. */
   set(grid: Grid<MyHex> | Map<string, MyHex>, hex: MyHex) {
     ('store' in grid ? grid.store : grid).set(hex.toString(), hex);
+  },
+  /** Get an id string for this hex with optional suffix. */
+  id(hex: MyHex, suffix = '') {
+    return [hex.q, hex.r, suffix].join('-');
   },
   /** Get SVG `<polygon points={..}>` string for this hex. */
   points(hex: Hex): string {
@@ -145,33 +150,74 @@ export const HexGrid: React.FC = () => {
       <svg className="cartograph" width={width} height={height} onClick={handleClick} fill={TERRAIN_COLORS[stack[0]]}>
         <rect width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
-        {hexes.map((hex, i) => (
-          <polygon key={`tile-${i}`} points={Hexy.points(hex)} fill={TERRAIN_COLORS[hex.type]} />
-        ))}
-        {stack.length > 0 &&
-          Array.from(neighbors.values()).map((hex, i) => (
-            <polygon
-              key={`empty-${i}`}
+        <AnimatePresence>
+          {hexes.map(hex => (
+            <motion.polygon
+              key={Hexy.id(hex, 'tile')}
               points={Hexy.points(hex)}
-              className="open"
-              fill="lightsteelblue"
-              fillOpacity={0.2}
+              fill={TERRAIN_COLORS[hex.type]}
+              initial={{ opacity: 0, scale: 0.3 }}
+              animate={{ opacity: 1, scale: 1 }}
             />
           ))}
+          {stack.length > 0 &&
+            Array.from(neighbors.values()).map(hex => (
+              <motion.polygon
+                key={Hexy.id(hex, 'empty')}
+                points={Hexy.points(hex)}
+                className="open"
+                fill="lightsteelblue"
+                initial={{ opacity: 0, scale: 0.6 }}
+                animate={{ opacity: 0.2, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                whileHover={{ fill: TERRAIN_COLORS[stack[0]], scale: 1, opacity: 0.33 }}
+              />
+            ))}
+        </AnimatePresence>
 
-        <g className="score">
-          <text x={width / 2} y={height - SIZE} fontSize="2em" textAnchor="middle">
-            {score}
-          </text>
-          {points > 0 && (
-            <text x={width / 2} y={height - 10} textAnchor="middle">
-              +{points}
+        <g className="scorebox">
+          <AnimatePresence>
+            {/* total score */}
+            <text key="score" x={width / 2} y={height - SIZE} fontSize="2em" textAnchor="middle">
+              {score}
             </text>
-          )}
-          <text x={width - 10} y={height - 10} fillOpacity={0.5} textAnchor="end">
-            {lastScore + target}
-          </text>
-          <rect x={0} y={height - 5} width={width * ((score - lastScore) / target)} height={5} fill="maroon" />
+            {/* points earned from last move */}
+            {points > 0 && (
+              <motion.text
+                key={score}
+                x={width / 2}
+                textAnchor="middle"
+                initial={{ y: height }}
+                animate={{ y: height - 10 }}
+                exit={{ y: height - 20, opacity: 0 }}
+              >
+                +{points}
+              </motion.text>
+            )}
+            {/* target score for next reward */}
+            <motion.text
+              key={`target-${target}`}
+              x={width - 10}
+              fillOpacity={0.5}
+              textAnchor="end"
+              initial={{ y: height }}
+              animate={{ y: height - 10 }}
+              exit={{ y: height - 20, opacity: 0 }}
+            >
+              {lastScore + target}
+            </motion.text>
+            {/* progress bar to reward */}
+            <motion.rect
+              key={`progress-${target}`}
+              x={0}
+              y={height - 6}
+              initial={{ width: 0 }}
+              animate={{ width: width * Math.min(1, (score - lastScore) / target), opacity: 1 }}
+              exit={{ width, scaleY: 4, opacity: 0, transformOrigin: 'bottom' }}
+              height={6}
+              fill="maroon"
+            />
+          </AnimatePresence>
         </g>
       </svg>
       <svg className="storage" width={SIZE * 2} height={height}>
@@ -184,6 +230,7 @@ export const HexGrid: React.FC = () => {
           // so the first one is one top
           .reverse()}
 
+        {/* stack count */}
         <g transform={`translate(${SIZE}, ${height - SIZE / 3})`}>
           <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
           <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">

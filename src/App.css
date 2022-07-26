@@ -54,11 +54,10 @@ header button {
   fill: currentColor;
 }
 
-.cartograph .open:hover {
-  fill: inherit;
-  fill-opacity: 0.33;
-}
-
 .storage {
   border-bottom: 2px solid brown;
+}
+
+.scorebox text {
+  font-variant: tabular-nums;
 }
