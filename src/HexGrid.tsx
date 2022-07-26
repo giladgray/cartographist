@@ -10,18 +10,9 @@ const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.WATER]: '#0096FF',
 };
 
-let nextId = 0;
-
-/** Create a number of new tiles. */
-function createTiles(count = 10): Tile[] {
-  return Array(count)
-    .fill(TerrainType.PLAIN, 0)
-    .map(() => ({ id: nextId++, type: Math.floor(Math.random() * 4) as TerrainType }));
-}
-
 export const HexGrid: React.FC = () => {
   const [grid, setGrid] = useState(Hexy.create);
-  const [stack, setStack] = useState(createTiles);
+  const [stack, setStack] = useState(Hexy.createTiles);
   // total score
   const [score, setScore] = useState(0);
   // points earned from last move
@@ -34,7 +25,7 @@ export const HexGrid: React.FC = () => {
   // award more tiles for reaching the target and set a new larger target.
   useEffect(() => {
     if (score - lastScore >= target) {
-      setStack(s => s.concat(createTiles(5)));
+      setStack(s => s.concat(Hexy.createTiles(5)));
       setLastScore(lastScore + target);
       setTarget(Math.floor(target * 1.2));
     }
@@ -64,7 +55,7 @@ export const HexGrid: React.FC = () => {
     setLastScore(0);
     setTarget(10);
     setGrid(Hexy.create());
-    setStack(createTiles());
+    setStack(Hexy.createTiles());
   };
 
   const width = 800;
@@ -74,7 +65,7 @@ export const HexGrid: React.FC = () => {
       <header>
         <h1>Cartographer's Guild</h1>
         <button onClick={newGame}>New game</button>
-        <button disabled={stack.length > 40} onClick={() => setStack(s => s.concat(createTiles(5)))}>
+        <button disabled={stack.length > 40} onClick={() => setStack(s => s.concat(Hexy.createTiles(5)))}>
           Add 5
         </button>
       </header>

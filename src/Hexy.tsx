@@ -31,11 +31,19 @@ const DIRECTIONS = [
   CompassDirection.NW,
 ];
 
+let nextTileId = 0;
+
 export const Hexy = {
   size: SIZE,
   /** Create new hex grid with some starter tiles. */
   create(x = 5, y = 6): MyGrid {
     return new HoneycombGrid(HEX, add([x, y], [x - 1, y], [x, y - 1]));
+  },
+  /** Create a number of new tiles. */
+  createTiles(count = 10): Tile[] {
+    return Array(count)
+      .fill(TerrainType.PLAIN, 0)
+      .map(() => ({ id: nextTileId++, type: Math.floor(Math.random() * 4) as TerrainType }));
   },
   /** Get array of all neighbors of this hex. */
   neighborsOf(grid: MyGrid, hex: Hex) {
