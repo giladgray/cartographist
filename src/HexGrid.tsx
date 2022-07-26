@@ -16,10 +16,12 @@ const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.WATER]: '#0096FF',
 };
 
-interface MyHex extends Hex {
+interface Tile {
   id: number;
   type: TerrainType;
 }
+
+interface MyHex extends Hex, Tile {}
 
 const SIZE = 30;
 const HEX = createHexPrototype<MyHex>({ dimensions: SIZE, type: TerrainType.PLAIN });
@@ -69,7 +71,7 @@ const Hexy = {
 let nextId = 0;
 
 /** Create a number of new tiles. */
-function createTiles(count = 10): Omit<MyHex, keyof Hex>[] {
+function createTiles(count = 10): Tile[] {
   return Array(count)
     .fill(TerrainType.PLAIN, 0)
     .map(() => ({ id: nextId++, type: Math.floor(Math.random() * 4) as TerrainType }));
@@ -96,24 +98,10 @@ export const HexGrid: React.FC = () => {
     }
   }, [score, lastScore, target]);
 
-  // get all hexes from grid.store
-  const hexes: MyHex[] = [];
-  grid.run(hex => hexes.push(hex));
-
-  // get all unique neighbors of hexes
-  const neighbors = new Map<string, MyHex>();
-  grid.run(hex => {
-    for (const n of Hexy.neighborsOf(grid, hex)) {
-      if (!Hexy.has(grid, n)) {
-        Hexy.set(neighbors, n);
-      }
-    }
-  });
-
   const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
     // can place in empty tile next to a placed tile
-    if (stack.length > 0 && !Hexy.has(grid, pt) && Hexy.has(neighbors, pt)) {
+    if (stack.length > 0 && !Hexy.has(grid, pt) && Hexy.neighborsOf(grid, pt).some(n => Hexy.has(grid, n))) {
       const [{ id, type }, ...rest] = stack;
       pt.id = id;
       pt.type = type;
@@ -139,8 +127,6 @@ export const HexGrid: React.FC = () => {
 
   const width = 800;
   const height = 600;
-  const lastAdded = hexes[hexes.length - 1];
-  const stackPoints = Hexy.points(grid.getHex({ col: 0, row: 0 }));
   return (
     <div className="App">
       <header>
@@ -151,121 +137,169 @@ export const HexGrid: React.FC = () => {
         </button>
       </header>
 
-      {/* default fill for hover state on perimeter */}
       <svg className="cartograph" width={width} height={height} onClick={handleClick}>
         <rect width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
-        <AnimatePresence>
-          {hexes.map(hex => (
-            <motion.polygon
-              key={Hexy.id(hex, 'tile')}
-              points={Hexy.points(hex)}
-              fill={TERRAIN_COLORS[hex.type]}
-              initial={{ opacity: 0, scale: 0.3 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.3 }}
-            />
-          ))}
-          {stack.length > 0 &&
-            Array.from(neighbors.values()).map(hex => (
-              <motion.polygon
-                key={Hexy.id(hex, 'empty')}
-                points={Hexy.points(hex)}
-                className="open"
-                fill="lightsteelblue"
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 0.2, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.6 }}
-                transition={{ delay: 0.1 }}
-                whileHover={{ fill: TERRAIN_COLORS[stack[0].type], scale: 1, opacity: 0.33 }}
-              />
-            ))}
-        </AnimatePresence>
+        <Board grid={grid} next={stack[0]} points={points} />
 
-        <g className="scorebox">
-          <AnimatePresence>
-            {/* total score */}
-            <text key="score" x={width / 2} y={height - 15} fontSize="2em" textAnchor="middle">
-              {score}
-            </text>
-            {/* points earned from last move; appears on last added tile */}
-            {points > 0 && (
-              <motion.text
-                key={score}
-                x={lastAdded.x}
-                y={lastAdded.y}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                style={{ filter: 'drop-shadow(0 0 4px snow)' }}
-                initial={{ translateY: 10, opacity: 0 }}
-                animate={{ translateY: 0, opacity: 1 }}
-                exit={{ translateY: -10, opacity: 0 }}
-              >
-                +{points}
-              </motion.text>
-            )}
-            {/* target score for next reward */}
-            <motion.text
-              key={`target-${target}`}
-              x={width - 10}
-              fillOpacity={0.5}
-              textAnchor="end"
-              initial={{ y: height }}
-              animate={{ y: height - 15 }}
-              exit={{ y: height - 30, opacity: 0 }}
-            >
-              {lastScore + target}
-            </motion.text>
-            {/* progress bar to reward */}
-            <motion.rect
-              key={`progress-${target}`}
-              x={0}
-              y={height - 5}
-              initial={{ width: 0 }}
-              animate={{ width: width * Math.min(1, (score - lastScore) / target), opacity: 1 }}
-              exit={{ width, scaleY: 4, opacity: 0, transformOrigin: 'bottom' }}
-              height={5}
-              fill="maroon"
-            />
-          </AnimatePresence>
+        <g transform={`translate(0 ${height})`}>
+          <Scorebox lastScore={lastScore} score={score} target={target} />
         </g>
       </svg>
-      <svg className="storage" width={SIZE * 2} height={height}>
-        <AnimatePresence>
-          {stack
-            .map((t, i) => (
+
+      <TileStack height={height} hex={grid.getHex({ col: 0, row: 0 })} stack={stack} />
+    </div>
+  );
+};
+
+interface BoardProps {
+  grid: Grid<MyHex>;
+  next?: Tile;
+  points?: number;
+}
+
+const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
+  // get all hexes from grid.store
+  const hexes: MyHex[] = [];
+  grid.run(hex => hexes.push(hex));
+
+  // get all unique neighbors of hexes
+  const neighbors = new Map<string, MyHex>();
+  grid.run(hex => {
+    for (const n of Hexy.neighborsOf(grid, hex)) {
+      if (!Hexy.has(grid, n)) {
+        Hexy.set(neighbors, n);
+      }
+    }
+  });
+
+  const lastAdded = hexes[hexes.length - 1];
+  return (
+    <AnimatePresence>
+      {hexes.map(hex => (
+        <motion.polygon
+          key={Hexy.id(hex, 'tile')}
+          points={Hexy.points(hex)}
+          fill={TERRAIN_COLORS[hex.type]}
+          initial={{ opacity: 0, scale: 0.3 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.3 }}
+        />
+      ))}
+      {next &&
+        Array.from(neighbors.values()).map(hex => (
+          <motion.polygon
+            key={Hexy.id(hex, 'empty')}
+            points={Hexy.points(hex)}
+            className="open"
+            fill="lightsteelblue"
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 0.2, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ fill: TERRAIN_COLORS[next.type], opacity: 0.33, scale: 1 }}
+          />
+        ))}
+      {/* points earned from last move; appears on last added tile */}
+      {points ? (
+        <motion.text
+          key={lastAdded.id}
+          x={lastAdded.x}
+          y={lastAdded.y}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          style={{ filter: 'drop-shadow(0 0 4px snow)' }}
+          initial={{ translateY: 10, opacity: 0 }}
+          animate={{ translateY: 0, opacity: 1 }}
+          exit={{ translateY: -10, opacity: 0 }}
+        >
+          +{points}
+        </motion.text>
+      ) : null}
+    </AnimatePresence>
+  );
+};
+Board.displayName = 'Board';
+
+interface ScoreProps {
+  score: number;
+  lastScore: number;
+  target: number;
+}
+
+const Scorebox: React.FC<ScoreProps> = ({ score, lastScore, target }) => (
+  <AnimatePresence>
+    {/* total score */}
+    <text key="score" x="50%" y={-15} fontSize="2em" textAnchor="middle">
+      {score}
+    </text>
+    {/* target score for next reward */}
+    <motion.text
+      key={`target-${target}`}
+      x="99%"
+      fillOpacity={0.5}
+      textAnchor="end"
+      initial={{ y: 0 }}
+      animate={{ y: -15 }}
+      exit={{ y: -30, opacity: 0 }}
+    >
+      {lastScore + target}
+    </motion.text>
+    {/* progress bar to reward */}
+    <motion.rect
+      key={`progress-${target}`}
+      x={0}
+      y={-5}
+      height={5}
+      fill="maroon"
+      initial={{ width: 0 }}
+      animate={{ width: 100 * Math.min(1, (score - lastScore) / target) + '%', opacity: 1 }}
+      exit={{ width: '100%', opacity: 0, scaleY: 4, transformOrigin: 'bottom' }}
+    />
+  </AnimatePresence>
+);
+Scorebox.displayName = 'Scorebox';
+
+interface StackProps {
+  height: number;
+  hex: MyHex;
+  stack: Tile[];
+}
+
+const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => {
+  const stackPoints = Hexy.points(hex);
+  return (
+    <svg className="storage" width={SIZE * 2} height={height}>
+      <AnimatePresence>
+        {stack
+          .map((t, i) => {
+            const translateY = height - 5 - (stack.length - i) * 10;
+            return (
               <motion.g
                 key={`stack-${t.id}`}
-                initial={{
-                  opacity: 0.3,
-                  translateX: SIZE * 3,
-                  translateY: height - 5 - (stack.length - i) * 10,
-                }}
-                animate={{
-                  opacity: 1,
-                  translateX: SIZE,
-                  translateY: height - 5 - (stack.length - i) * 10,
-                }}
+                initial={{ opacity: 0.3, translateX: SIZE * 3, translateY }}
+                animate={{ opacity: 1, translateX: SIZE, translateY }}
                 exit={{ opacity: 0, scale: 1.5, translateX: 0 }}
               >
                 <polygon points={stackPoints} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t.type]} />
               </motion.g>
-            ))
-            // so the first one is one top
-            .reverse()}
-        </AnimatePresence>
+            );
+          })
+          // so the first one is one top
+          .reverse()}
+      </AnimatePresence>
 
-        {/* stack count */}
-        <g transform={`translate(${SIZE}, ${height - SIZE / 3})`}>
-          <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
-          <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">
-            {stack.length || 'END'}
-          </text>
-        </g>
-      </svg>
-    </div>
+      {/* stack count */}
+      <g transform={`translate(${SIZE}, ${height - SIZE / 3})`}>
+        <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
+        <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">
+          {stack.length || 'END'}
+        </text>
+      </g>
+    </svg>
   );
 };
+TileStack.displayName = 'TileStack';
 
 /*
 ROADMAP
