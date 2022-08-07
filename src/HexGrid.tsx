@@ -18,11 +18,9 @@ export const HexGrid: React.FC = () => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
     // can place in empty tile next to a placed tile
     if (stack.length > 0 && !Hexy.has(grid, pt) && Hexy.neighborsOf(grid, pt).some(n => Hexy.has(grid, n))) {
-      const [{ id, type }, ...rest] = stack;
-      pt.id = id;
-      pt.type = type;
+      const [head, ...rest] = stack;
       setStack(rest);
-      setGrid(grid.update(g => Hexy.set(g, pt)));
+      setGrid(grid.update(g => Hexy.set(g, pt.clone(head))));
 
       // award points for adding a tile
       const neighbors = Hexy.neighborsOf(grid, pt).filter(n => Hexy.get(grid, n)?.type === pt.type);
