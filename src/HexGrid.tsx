@@ -2,9 +2,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
 import { Board } from './Board';
-import { TERRAIN_COLORS } from './const';
-import { Hexy, MyHex, Tile } from './Hexy';
+import { Hexy } from './Hexy';
 import { GameState, useGameReducer } from './reducer';
+import { TileStack } from './TileStack';
 
 export const HexGrid: React.FC = () => {
   const [grid, setGrid] = useState(Hexy.create);
@@ -97,47 +97,6 @@ const Scorebox: React.FC<GameState> = ({ score, lastTarget, target }) => (
   </AnimatePresence>
 );
 Scorebox.displayName = 'Scorebox';
-
-interface StackProps {
-  height: number;
-  hex: MyHex;
-  stack: Tile[];
-}
-
-const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => {
-  const stackPoints = Hexy.points(hex);
-  return (
-    <svg className="storage" width={Hexy.size * 2} height={height}>
-      <AnimatePresence>
-        {stack
-          .map((t, i) => {
-            const translateY = height - 5 - (stack.length - i) * 10;
-            return (
-              <motion.g
-                key={`stack-${t.id}`}
-                initial={{ opacity: 0.3, translateX: Hexy.size * 3, translateY }}
-                animate={{ opacity: 1, translateX: Hexy.size, translateY }}
-                exit={{ opacity: 0, scale: 1.5, translateX: 0 }}
-              >
-                <polygon points={stackPoints} stroke="white" strokeWidth={2} fill={TERRAIN_COLORS[t.type]} />
-              </motion.g>
-            );
-          })
-          // so the first one is one top
-          .reverse()}
-      </AnimatePresence>
-
-      {/* stack count */}
-      <g transform={`translate(${Hexy.size}, ${height - 15})`}>
-        <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
-        <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">
-          {stack.length || 'END'}
-        </text>
-      </g>
-    </svg>
-  );
-};
-TileStack.displayName = 'TileStack';
 
 /*
 ROADMAP
