@@ -1,11 +1,6 @@
 import { add, CompassDirection, createHexPrototype, Grid as HoneycombGrid, Hex, neighborOf } from 'honeycomb-grid';
 
-export enum TerrainType {
-  PLAIN,
-  FOREST,
-  MOUNTAIN,
-  WATER,
-}
+import { TerrainType } from './const';
 
 export interface Tile {
   /** Unique identifier for this tile, for stable key-ing. */
