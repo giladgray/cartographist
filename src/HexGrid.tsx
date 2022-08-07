@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
 import { Hexy, MyGrid, MyHex, TerrainType, Tile } from './Hexy';
+import { GameState, useGameReducer } from './reducer';
 
 const TERRAIN_COLORS: Record<TerrainType, string> = {
   [TerrainType.PLAIN]: '#E1C16E',
@@ -13,23 +14,10 @@ const TERRAIN_COLORS: Record<TerrainType, string> = {
 export const HexGrid: React.FC = () => {
   const [grid, setGrid] = useState(Hexy.create);
   const [stack, setStack] = useState(Hexy.createTiles);
-  // total score
-  const [score, setScore] = useState(0);
-  // points earned from last move
-  const [points, setPoints] = useState(0);
-  // score from the previous target
-  const [lastScore, setLastScore] = useState(0);
-  // points needed to reach next target (lastScore + target)
-  const [target, setTarget] = useState(10);
+  const [score, actions] = useGameReducer();
 
-  // award more tiles for reaching the target and set a new larger target.
-  useEffect(() => {
-    if (score - lastScore >= target) {
-      setStack(s => s.concat(Hexy.createTiles(5)));
-      setLastScore(lastScore + target);
-      setTarget(Math.floor(target * 1.2));
-    }
-  }, [score, lastScore, target]);
+  // award more tiles for reaching the target
+  useEffect(() => setStack(s => s.concat(Hexy.createTiles(5))), [score.level]);
 
   const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
     const pt = grid.pointToHex({ x: offsetX, y: offsetY });
@@ -43,17 +31,12 @@ export const HexGrid: React.FC = () => {
 
       // award points for adding a tile
       const neighbors = Hexy.neighborsOf(grid, pt).filter(n => Hexy.get(grid, n)?.type === pt.type);
-      const points = 1 + neighbors.length ** 2;
-      setPoints(points);
-      setScore(s => s + points);
+      actions.add(Math.max(1, neighbors.length ** 2));
     }
   };
 
   const newGame = () => {
-    setPoints(0);
-    setScore(0);
-    setLastScore(0);
-    setTarget(10);
+    actions.reset();
     setGrid(Hexy.create());
     setStack(Hexy.createTiles());
   };
@@ -74,11 +57,11 @@ export const HexGrid: React.FC = () => {
         <rect className="background" width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
         <g className="board">
-          <Board grid={grid} next={stack[0]} points={points} />
+          <Board grid={grid} next={stack[0]} points={score.lastPoints} />
         </g>
 
         <g className="score" transform={`translate(0 ${height})`}>
-          <Scorebox lastScore={lastScore} score={score} target={target} />
+          <Scorebox {...score} />
         </g>
       </svg>
 
@@ -155,13 +138,7 @@ const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
 };
 Board.displayName = 'Board';
 
-interface ScoreProps {
-  score: number;
-  lastScore: number;
-  target: number;
-}
-
-const Scorebox: React.FC<ScoreProps> = ({ score, lastScore, target }) => (
+const Scorebox: React.FC<GameState> = ({ score, lastTarget, target }) => (
   <AnimatePresence>
     {/* total score */}
     <text key="score" x="50%" y={-15} fontSize="2em" textAnchor="middle">
@@ -177,7 +154,7 @@ const Scorebox: React.FC<ScoreProps> = ({ score, lastScore, target }) => (
       animate={{ y: -15 }}
       exit={{ y: -30, opacity: 0 }}
     >
-      {lastScore + target}
+      {lastTarget + target}
     </motion.text>
     {/* progress bar to reward */}
     <motion.rect
@@ -187,7 +164,7 @@ const Scorebox: React.FC<ScoreProps> = ({ score, lastScore, target }) => (
       height={5}
       fill="maroon"
       initial={{ width: 0 }}
-      animate={{ width: 100 * Math.min(1, (score - lastScore) / target) + '%', opacity: 1 }}
+      animate={{ width: 100 * Math.min(1, (score - lastTarget) / target) + '%', opacity: 1 }}
       exit={{ width: '100%', opacity: 0, scaleY: 4, transformOrigin: 'bottom' }}
     />
   </AnimatePresence>

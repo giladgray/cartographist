@@ -39,7 +39,7 @@ export const Hexy = {
   create(x = 5, y = 6): MyGrid {
     return new HoneycombGrid(HEX, add([x, y], [x - 1, y], [x, y - 1]));
   },
-  /** Create a number of new tiles. */
+  /** Create a number of new tiles. @default 10 */
   createTiles(count = 10): Tile[] {
     return Array(count)
       .fill(TerrainType.PLAIN, 0)
