@@ -71,11 +71,13 @@ export const HexGrid: React.FC = () => {
       </header>
 
       <svg className="cartograph" width={width} height={height} onClick={handleClick}>
-        <rect width="100%" height="100%" fill="linen" fillOpacity={0.7} />
+        <rect className="background" width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
-        <Board grid={grid} next={stack[0]} points={points} />
+        <g className="board">
+          <Board grid={grid} next={stack[0]} points={points} />
+        </g>
 
-        <g transform={`translate(0 ${height})`}>
+        <g className="score" transform={`translate(0 ${height})`}>
           <Scorebox lastScore={lastScore} score={score} target={target} />
         </g>
       </svg>
@@ -141,7 +143,6 @@ const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
           y={lastAdded.y}
           textAnchor="middle"
           dominantBaseline="middle"
-          style={{ filter: 'drop-shadow(0 0 4px snow)' }}
           initial={{ translateY: 10, opacity: 0 }}
           animate={{ translateY: 0, opacity: 1 }}
           exit={{ translateY: -10, opacity: 0 }}
@@ -223,7 +224,7 @@ const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => {
       </AnimatePresence>
 
       {/* stack count */}
-      <g transform={`translate(${Hexy.size}, ${height - Hexy.size / 3})`}>
+      <g transform={`translate(${Hexy.size}, ${height - 15})`}>
         <rect fill="white" rx={6} x={-12} y={-15} width={24} height={20} />
         <text fill={stack.length > 2 ? 'inherit' : 'red'} textAnchor="middle">
           {stack.length || 'END'}

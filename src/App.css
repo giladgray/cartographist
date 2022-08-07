@@ -52,12 +52,17 @@ header button {
 
 .cartograph text {
   fill: currentColor;
+  font-variant: tabular-nums;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 0 1px snow);
 }
 
 .storage {
   border-bottom: 2px solid brown;
 }
 
-.scorebox text {
-  font-variant: tabular-nums;
+.storage text {
+  user-select: none;
+  pointer-events: none;
 }
