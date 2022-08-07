@@ -51,9 +51,7 @@ export const HexGrid: React.FC = () => {
       <svg className="cartograph" width={width} height={height} onClick={handleClick}>
         <rect className="background" width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
-        <g className="board">
-          <Board grid={grid} next={stack[0]} points={score.lastPoints} />
-        </g>
+        <Board grid={grid} next={stack[0]} points={score.lastPoints} />
 
         <g className="score" transform={`translate(0 ${height})`}>
           <Scorebox {...score} />
@@ -64,6 +62,7 @@ export const HexGrid: React.FC = () => {
     </div>
   );
 };
+HexGrid.displayName = 'HexGrid';
 
 const Scorebox: React.FC<GameState> = ({ score, lastTarget, target }) => (
   <AnimatePresence>

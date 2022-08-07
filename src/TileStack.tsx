@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import React from 'react';
 
 import { HexTile } from './HexTile';
@@ -17,14 +17,15 @@ export const TileStack: React.FC<StackProps> = ({ height, hex, stack }) => (
         .map((t, i) => {
           const translateY = height - 5 - (stack.length - i) * 10;
           return (
-            <motion.g
+            <HexTile
+              hex={hex.clone({ type: t.type })}
               key={`stack-${t.id}`}
+              stroke="white"
+              strokeWidth={2}
               initial={{ opacity: 0.3, translateX: Hexy.size * 3, translateY }}
               animate={{ opacity: 1, translateX: Hexy.size, translateY }}
               exit={{ opacity: 0, scale: 1.5, translateX: 0 }}
-            >
-              <HexTile hex={hex.clone({ type: t.type })} stroke="white" strokeWidth={2} />
-            </motion.g>
+            />
           );
         })
         // so the first one is one top
