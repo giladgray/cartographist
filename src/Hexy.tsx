@@ -41,22 +41,26 @@ let nextTileId = 0;
 export const Hexy = {
   size: SIZE,
   /** Create new hex grid with some starter tiles. */
-  create(x = 5, y = 6): MyGrid {
-    return new HoneycombGrid(HEX, add([x, y], [x - 1, y], [x, y - 1]));
+  create(x = 10, y = 10): MyGrid {
+    return new HoneycombGrid(HEX, add()).update(grid =>
+      Hexy.createTiles(4).forEach(tile => {
+        const hex = grid
+          .getHex({ row: 1 + Math.floor(Math.random() * x), col: 1 + Math.floor(Math.random() * y) })
+          .clone(tile);
+        Hexy.set(grid, hex);
+      })
+    );
   },
   /** Create a number of new tiles. @default 10 */
-  createTiles(count = 10): Tile[] {
-    return Array(count)
-      .fill(TerrainType.PLAIN, 0)
-      .map(() => ({
-        id: nextTileId++,
-        type: randomTerrain(),
-        terrain: Array(3)
-          .fill(TerrainType.PLAIN, 0)
-          .map(randomTerrain)
-          .map(x => [x, x])
-          .flat(),
-      }));
+  createTiles(count = 10, segments = 3): Tile[] {
+    return times<Tile>(count, () => ({
+      id: nextTileId++,
+      // falling chance for more segments
+      terrain: times(segments, n => Math.random() < 1 - (0.8 / (segments - 1)) * n && randomTerrain())
+        .filter(isDefined)
+        .map((type, _i, arr) => times(6 / arr.length, () => type))
+        .flat(),
+    }));
   },
   center(hex: Hex): Point {
     return { x: -hex.center.x + hex.width / 2, y: -hex.center.y + hex.height / 2 };
@@ -96,6 +100,14 @@ export const Hexy = {
     return Hexy.rotate([...terrain.slice(direction), ...terrain.slice(0, direction)], (times - 1) % terrain.length);
   },
 };
+
+function isDefined<T>(x: T | false | null | undefined): x is T {
+  return !!x;
+}
+
+function times<R>(n: number, callback: (n: number) => R): R[] {
+  return Array(n).fill(null, 0).map(callback);
+}
 
 function randomTerrain(): TerrainType {
   return Math.floor(Math.random() * 4) as TerrainType;
