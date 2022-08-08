@@ -13,8 +13,6 @@ import { TerrainType } from './const';
 export interface Tile {
   /** Unique identifier for this tile, for stable key-ing. */
   id: number;
-  /** Terrain type of tile. */
-  type: TerrainType;
   terrain: TerrainType[];
 }
 
@@ -24,8 +22,7 @@ export type MyGrid = HoneycombGrid<MyHex>;
 const SIZE = 30;
 const HEX = createHexPrototype<MyHex>({
   dimensions: SIZE,
-  type: TerrainType.PLAIN,
-  terrain: Array(6).fill(TerrainType.PLAIN, 0),
+  terrain: times(6, () => TerrainType.PLAIN),
 });
 
 const DIRECTIONS = [

@@ -21,7 +21,7 @@ export const HexGrid: React.FC = () => {
       setGrid(grid.update(g => Hexy.set(g, hex)));
 
       // award points for adding a tile
-      const neighbors = Hexy.neighborsOf(grid, hex).filter(n => Hexy.get(grid, n)?.type === hex.type);
+      const neighbors = Hexy.neighborsOf(grid, hex).filter((n, i) => Hexy.edgesMatch(i, Hexy.get(grid, n), hex));
       actions.add(Math.max(1, neighbors.length ** 2));
     }
   };
