@@ -1,4 +1,12 @@
-import { add, CompassDirection, createHexPrototype, Grid as HoneycombGrid, Hex, neighborOf } from 'honeycomb-grid';
+import {
+  add,
+  CompassDirection,
+  createHexPrototype,
+  Grid as HoneycombGrid,
+  Hex,
+  neighborOf,
+  Point,
+} from 'honeycomb-grid';
 
 import { TerrainType } from './const';
 
@@ -7,13 +15,18 @@ export interface Tile {
   id: number;
   /** Terrain type of tile. */
   type: TerrainType;
+  terrain: TerrainType[];
 }
 
 export interface MyHex extends Hex, Tile {}
 export type MyGrid = HoneycombGrid<MyHex>;
 
 const SIZE = 30;
-const HEX = createHexPrototype<MyHex>({ dimensions: SIZE, type: TerrainType.PLAIN });
+const HEX = createHexPrototype<MyHex>({
+  dimensions: SIZE,
+  type: TerrainType.PLAIN,
+  terrain: Array(6).fill(TerrainType.PLAIN, 0),
+});
 
 const DIRECTIONS = [
   // CompassDirection.N,
@@ -38,7 +51,18 @@ export const Hexy = {
   createTiles(count = 10): Tile[] {
     return Array(count)
       .fill(TerrainType.PLAIN, 0)
-      .map(() => ({ id: nextTileId++, type: Math.floor(Math.random() * 4) as TerrainType }));
+      .map(() => ({
+        id: nextTileId++,
+        type: randomTerrain(),
+        terrain: Array(3)
+          .fill(TerrainType.PLAIN, 0)
+          .map(randomTerrain)
+          .map(x => [x, x])
+          .flat(),
+      }));
+  },
+  center(hex: Hex): Point {
+    return { x: -hex.center.x + hex.width / 2, y: -hex.center.y + hex.height / 2 };
   },
   /** Get array of all neighbors of this hex. */
   neighborsOf(grid: MyGrid, hex: Hex) {
@@ -62,6 +86,10 @@ export const Hexy = {
   },
   /** Get SVG `<polygon points={..}>` string for this hex. */
   points(hex: Hex): string {
-    return hex.corners.map(c => `${Math.round(c.x)} ${Math.round(c.y)}`).join(',');
+    return hex.corners.map(pt => `${Math.round(pt.x)} ${Math.round(pt.y)}`).join(',');
   },
 };
+
+function randomTerrain(): TerrainType {
+  return Math.floor(Math.random() * 4) as TerrainType;
+}
