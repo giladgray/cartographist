@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 
 import { Board } from './Board';
-import { Hexy } from './Hexy';
+import { Hexy, MyHex } from './Hexy';
 import { GameState, useGameReducer } from './reducer';
 import { TileStack } from './TileStack';
 
@@ -14,16 +14,14 @@ export const HexGrid: React.FC = () => {
   // award more tiles for reaching the target
   useEffect(() => setStack(s => s.concat(Hexy.createTiles(5))), [score.level]);
 
-  const handleClick: React.MouseEventHandler = ({ nativeEvent: { offsetX, offsetY } }) => {
-    const pt = grid.pointToHex({ x: offsetX, y: offsetY });
+  const handleClick = (hex: MyHex) => {
     // can place in empty tile next to a placed tile
-    if (stack.length > 0 && !Hexy.has(grid, pt) && Hexy.neighborsOf(grid, pt).some(n => Hexy.has(grid, n))) {
-      const [head, ...rest] = stack;
-      setStack(rest);
-      setGrid(grid.update(g => Hexy.set(g, pt.clone(head))));
+    if (stack.length > 0 && !Hexy.has(grid, hex) && Hexy.neighborsOf(grid, hex).some(n => Hexy.has(grid, n))) {
+      setStack(stack.slice(1));
+      setGrid(grid.update(g => Hexy.set(g, hex)));
 
       // award points for adding a tile
-      const neighbors = Hexy.neighborsOf(grid, pt).filter(n => Hexy.get(grid, n)?.type === pt.type);
+      const neighbors = Hexy.neighborsOf(grid, hex).filter(n => Hexy.get(grid, n)?.type === hex.type);
       actions.add(Math.max(1, neighbors.length ** 2));
     }
   };
@@ -46,10 +44,10 @@ export const HexGrid: React.FC = () => {
         </button>
       </header>
 
-      <svg className="cartograph" width={width} height={height} onClick={handleClick}>
+      <svg className="cartograph" width={width} height={height}>
         <rect className="background" width="100%" height="100%" fill="linen" fillOpacity={0.7} />
 
-        <Board grid={grid} next={stack[0]} points={score.lastPoints} />
+        <Board grid={grid} next={stack[0]} points={score.lastPoints} onAdd={handleClick} />
 
         <g className="score" transform={`translate(0 ${height})`}>
           <Scorebox {...score} />

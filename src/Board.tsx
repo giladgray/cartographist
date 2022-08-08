@@ -8,9 +8,10 @@ interface BoardProps {
   grid: MyGrid;
   next?: Tile;
   points?: number;
+  onAdd: (hex: MyHex) => void;
 }
 
-export const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
+export const Board: React.FC<BoardProps> = ({ grid, next, points, onAdd }) => {
   const [cursor, setCursor] = useState<MyHex>();
   const [rotate, setRotate] = useState(0);
   // get all hexes from grid.store
@@ -31,11 +32,18 @@ export const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
   return (
     <g
       className="board"
+      onClick={e => {
+        if (next) {
+          const hex = Hexy.eventToHex(grid, e.nativeEvent).clone(next);
+          hex.terrain = Hexy.rotate(hex.terrain, rotate);
+          onAdd(hex);
+        }
+      }}
       onContextMenu={e => {
         e.preventDefault();
-        e.button === 2 && setRotate(r => r + 1);
+        e.button === 2 && setRotate(r => r + (e.shiftKey ? -1 : 1));
       }}
-      onMouseMove={({ nativeEvent }) => setCursor(grid.pointToHex({ x: nativeEvent.offsetX, y: nativeEvent.offsetY }))}
+      onMouseMove={e => setCursor(Hexy.eventToHex(grid, e.nativeEvent))}
       onMouseLeave={() => setCursor(undefined)}
     >
       <AnimatePresence>

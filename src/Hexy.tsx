@@ -68,6 +68,10 @@ export const Hexy = {
   neighborsOf(grid: MyGrid, hex: Hex) {
     return DIRECTIONS.map(d => grid.getHex(neighborOf(hex, d)));
   },
+  /** Convert mouse event to hex coordinates. */
+  eventToHex(grid: MyGrid, event: MouseEvent) {
+    return grid.pointToHex({ x: event.offsetX, y: event.offsetY });
+  },
   /** Test if `grid.store` or map contains this hex. */
   has(grid: MyGrid | Map<string, MyHex>, hex: Hex) {
     return ('store' in grid ? grid.store : grid).has(hex.toString());
@@ -87,6 +91,12 @@ export const Hexy = {
   /** Get SVG `<polygon points={..}>` string for this hex. */
   points(hex: Hex): string {
     return hex.corners.map(pt => `${Math.round(pt.x)} ${Math.round(pt.y)}`).join(',');
+  },
+  /** Rotate an array of terrain types in either direction. */
+  rotate(terrain: TerrainType[], times = 1, invert = false): TerrainType[] {
+    if (times <= 0) return terrain;
+    const direction = invert ? 1 : -1;
+    return Hexy.rotate([...terrain.slice(direction), ...terrain.slice(0, direction)], (times - 1) % terrain.length);
   },
 };
 
