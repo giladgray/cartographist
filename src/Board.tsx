@@ -1,5 +1,5 @@
-import { AnimatePresence, motion, MotionProps, SVGMotionProps } from 'framer-motion';
-import React from 'react';
+import { AnimatePresence, motion, MotionProps, Point, SVGMotionProps } from 'framer-motion';
+import React, { useState } from 'react';
 
 import { HexTile } from './HexTile';
 import { Hexy, MyGrid, MyHex, Tile } from './Hexy';
@@ -11,6 +11,8 @@ interface BoardProps {
 }
 
 export const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
+  const [cursor, setCursor] = useState<MyHex>();
+  const [rotate, setRotate] = useState(0);
   // get all hexes from grid.store
   const hexes: MyHex[] = [];
   grid.run(hex => hexes.push(hex));
@@ -27,7 +29,15 @@ export const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
 
   const last = hexes[hexes.length - 1];
   return (
-    <g className="board">
+    <g
+      className="board"
+      onContextMenu={e => {
+        e.preventDefault();
+        e.button === 2 && setRotate(r => r + 1);
+      }}
+      onMouseMove={({ nativeEvent }) => setCursor(grid.pointToHex({ x: nativeEvent.offsetX, y: nativeEvent.offsetY }))}
+      onMouseLeave={() => setCursor(undefined)}
+    >
       <AnimatePresence>
         {hexes.map(hex => (
           <HexTile hex={hex} key={Hexy.id(hex, 'tile')} {...TILE_MOTION} />
@@ -42,15 +52,33 @@ export const Board: React.FC<BoardProps> = ({ grid, next, points }) => {
             +{points}
           </motion.text>
         ) : null}
+        {next && cursor && Hexy.has(neighbors, cursor) ? (
+          <Cursor center={Hexy.center(cursor)} hex={grid.getHex().clone({ terrain: next.terrain })} rotate={rotate} />
+        ) : null}
       </AnimatePresence>
     </g>
   );
 };
 Board.displayName = 'Board';
 
+const Cursor: React.FC<{ hex: MyHex; center: Point; rotate: number }> = ({ hex, center, rotate }) => {
+  const animate = { translateX: center.x, translateY: center.y, rotate: rotate * 60 };
+  return (
+    <motion.g initial={animate} animate={animate}>
+      <HexTile key="cursor" hex={hex} fillOpacity={0.5} {...CURSOR_MOTION} />
+    </motion.g>
+  );
+};
+Cursor.displayName = 'Cursor';
+
 const TILE_MOTION: MotionProps = {
   initial: { opacity: 0, scale: 0.3 },
   animate: { opacity: 1, scale: 1 },
+  exit: { opacity: 0, scale: 0.3 },
+};
+const CURSOR_MOTION: MotionProps = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, scale: 0.8 },
   exit: { opacity: 0, scale: 0.3 },
 };
 
@@ -59,8 +87,6 @@ const EMPTY_MOTION: MotionProps = {
   animate: { opacity: 0.2, scale: 1 },
   exit: { opacity: 0, scale: 0.6 },
   transition: { delay: 0.1 },
-  whileHover: { opacity: 0.6 },
-  whileTap: { opacity: 1 },
 };
 
 const TEXT_MOTION: SVGMotionProps<SVGTextElement> = {
