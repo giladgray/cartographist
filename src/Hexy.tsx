@@ -26,14 +26,14 @@ const HEX = createHexPrototype<MyHex>({
 });
 
 const DIRECTIONS = [
+  CompassDirection.W,
+  CompassDirection.NW,
   // CompassDirection.N,
   CompassDirection.NE,
   CompassDirection.E,
   CompassDirection.SE,
   // CompassDirection.S,
   CompassDirection.SW,
-  CompassDirection.W,
-  CompassDirection.NW,
 ];
 
 let nextTileId = 0;
@@ -62,12 +62,20 @@ export const Hexy = {
         .flat(),
     }));
   },
+  /** Return screen coordinates of hex center. */
   center(hex: Hex): Point {
     return { x: -hex.center.x + hex.width / 2, y: -hex.center.y + hex.height / 2 };
   },
   /** Get array of all neighbors of this hex. */
   neighborsOf(grid: MyGrid, hex: Hex) {
     return DIRECTIONS.map(d => grid.getHex(neighborOf(hex, d)));
+  },
+  /**
+   * Returns true if touching edges of the two hexes match. `corner` matches
+   * `hex.corners` index order.
+   */
+  edgesMatch(corner: number, a?: MyHex, b?: MyHex) {
+    return a?.terrain[corner] === b?.terrain[(corner + 3) % 6];
   },
   /** Convert mouse event to hex coordinates. */
   eventToHex(grid: MyGrid, event: MouseEvent) {
@@ -95,9 +103,9 @@ export const Hexy = {
   },
   /** Rotate an array of terrain types in either direction. */
   rotate(terrain: TerrainType[], times = 1, invert = false): TerrainType[] {
-    if (times <= 0) return terrain;
+    if (times % terrain.length <= 0) return terrain;
     const direction = invert ? 1 : -1;
-    return Hexy.rotate([...terrain.slice(direction), ...terrain.slice(0, direction)], (times - 1) % terrain.length);
+    return Hexy.rotate([...terrain.slice(direction), ...terrain.slice(0, direction)], times - 1);
   },
 };
 
