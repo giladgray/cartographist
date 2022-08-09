@@ -108,8 +108,8 @@ ROADMAP
 x stack of incoming tiles
 x basic scoring
 - draw percentage of terrain types
-- each tile edge has terrain type
-- rotate incoming tiles
+x each tile edge has terrain type
+x rotate incoming tiles
 - scoring
   - detect contiguous regions
 - quests

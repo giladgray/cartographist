@@ -43,24 +43,34 @@ export const Hexy = {
   /** Create new hex grid with some starter tiles. */
   create(x = 10, y = 10): MyGrid {
     return new HoneycombGrid(HEX, add()).update(grid =>
-      Hexy.createTiles(4).forEach(tile => {
-        const hex = grid
-          .getHex({ row: 1 + Math.floor(Math.random() * x), col: 1 + Math.floor(Math.random() * y) })
-          .clone(tile);
+      Hexy.createTiles(2).forEach(tile => {
+        // generate a little island of adjacent tiles
+        let hex = grid.getHex({ row: 1 + random(x), col: 1 + random(y) }).clone(tile);
         Hexy.set(grid, hex);
+        times(3, () => {
+          hex = Hexy.neighborsOf(grid, hex)[random(6)].clone(Hexy.tile());
+          Hexy.set(grid, hex);
+        });
       })
     );
   },
   /** Create a number of new tiles. @default 10 */
   createTiles(count = 10, segments = 3): Tile[] {
-    return times<Tile>(count, () => ({
+    return times<Tile>(count, () => Hexy.tile(segments));
+  },
+  /** Create a new tile. */
+  tile(segments = 3): Tile {
+    return {
       id: nextTileId++,
       // falling chance for more segments
-      terrain: times(segments, n => Math.random() < 1 - (0.8 / (segments - 1)) * n && randomTerrain())
-        .filter(isDefined)
-        .map((type, _i, arr) => times(6 / arr.length, () => type))
-        .flat(),
-    }));
+      terrain:
+        segments <= 1
+          ? Array(6).fill(randomTerrain(), 0)
+          : times(segments, n => (Math.random() < 1 - (0.8 / segments) * n ? randomTerrain() : null))
+              .filter(isDefined)
+              .map((type, _i, arr) => times(6 / arr.length, () => type))
+              .flat(),
+    };
   },
   /** Return screen coordinates of hex center. */
   center(hex: Hex): Point {
@@ -109,12 +119,16 @@ export const Hexy = {
   },
 };
 
-function isDefined<T>(x: T | false | null | undefined): x is T {
-  return !!x;
+function isDefined<T>(x: T | null | undefined): x is T {
+  return x != null;
 }
 
 function times<R>(n: number, callback: (n: number) => R): R[] {
   return Array(n).fill(null, 0).map(callback);
+}
+
+function random(max: number) {
+  return Math.floor(Math.random() * max);
 }
 
 function randomTerrain(): TerrainType {
