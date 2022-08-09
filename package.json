@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^1.6.2",
     "framer-motion": "^6.5.1",
     "honeycomb-grid": "alpha",
     "react": "^18.0.0",
