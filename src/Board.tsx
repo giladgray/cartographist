@@ -52,7 +52,13 @@ export const Board: React.FC<BoardProps> = ({ grid, next, points, onAdd }) => {
         ))}
         {next &&
           Array.from(neighbors.values()).map(hex => (
-            <HexTile hex={hex} key={Hexy.id(hex, 'empty')} className="open" fill="#B0C4DE" {...EMPTY_MOTION} />
+            <motion.polygon
+              key={Hexy.id(hex, 'empty')}
+              className="open"
+              fill="#B0C4DE"
+              points={Hexy.points(hex)}
+              {...EMPTY_MOTION}
+            />
           ))}
         {/* points earned from last move; appears on last added tile */}
         {points ? (
